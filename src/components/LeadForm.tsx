@@ -3,8 +3,6 @@ import { useId, useState, type FormEvent } from "react";
 const BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN as string | undefined;
 const CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID as string | undefined;
 
-const CATEGORIES = ["Седан", "Кроссовер", "Электромобиль", "Ещё не решил(а)"];
-
 type Status = "idle" | "sending" | "success" | "error";
 
 function escapeHtml(s: string) {
@@ -16,7 +14,7 @@ export function LeadForm() {
   const [errorMessage, setErrorMessage] = useState("");
   const nameId = useId();
   const phoneId = useId();
-  const categoryId = useId();
+  const commentId = useId();
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -25,7 +23,7 @@ export function LeadForm() {
     const data = new FormData(form);
     const name = String(data.get("name") || "").trim();
     const phone = String(data.get("phone") || "").trim();
-    const category = String(data.get("category") || "");
+    const comment = String(data.get("comment") || "").trim();
 
     if (!name || !phone) {
       setStatus("error");
@@ -40,7 +38,7 @@ export function LeadForm() {
       );
       console.warn(
         "LeadForm: VITE_TELEGRAM_BOT_TOKEN / VITE_TELEGRAM_CHAT_ID не заданы, заявка не отправлена.",
-        { name, phone, category },
+        { name, phone, comment },
       );
       return;
     }
@@ -51,8 +49,8 @@ export function LeadForm() {
     const text =
       `<b>Новая заявка — Авто из Кореи</b>\n` +
       `Имя: ${escapeHtml(name)}\n` +
-      `Телефон: ${escapeHtml(phone)}\n` +
-      `Интересует: ${escapeHtml(category || "не указано")}`;
+      `Телефон: ${escapeHtml(phone)}` +
+      (comment ? `\nКомментарий: ${escapeHtml(comment)}` : "");
 
     try {
       const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -114,24 +112,16 @@ export function LeadForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={categoryId} className="text-xs font-medium uppercase tracking-[0.06em] text-[#a1a1a6]">
-          Интересует
+        <label htmlFor={commentId} className="text-xs font-medium uppercase tracking-[0.06em] text-[#a1a1a6]">
+          Комментарий
         </label>
-        <select
-          id={categoryId}
-          name="category"
-          defaultValue=""
-          className="min-h-11 rounded-lg border border-white/15 bg-white/5 px-3.5 text-[15px] text-white outline-none focus:border-[#9b1c2c]"
-        >
-          <option value="" disabled>
-            Выберите категорию
-          </option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c} className="bg-[#111113]">
-              {c}
-            </option>
-          ))}
-        </select>
+        <textarea
+          id={commentId}
+          name="comment"
+          rows={3}
+          className="rounded-lg border border-white/15 bg-white/5 px-3.5 py-2.5 text-[15px] text-white outline-none placeholder:text-[#6b6b70] focus:border-[#9b1c2c]"
+          placeholder="Какая машина интересует, бюджет — что угодно"
+        />
       </div>
 
       {status === "error" && <p className="text-sm text-[#ff6b6b]">{errorMessage}</p>}
